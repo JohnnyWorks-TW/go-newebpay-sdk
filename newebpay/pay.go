@@ -2,6 +2,7 @@ package newebpay
 
 import (
 	"github.com/google/go-querystring/query"
+	"reflect"
 )
 
 func (c *Client) PreparePayRequest(info *TradeInfo) (*PayRequest, error) {
@@ -27,6 +28,26 @@ type PayRequest struct {
 	TradeInfo  string `json:"TradeInfo"`
 	TradeSha   string `json:"TradeSha"`
 	Version    string `json:"Version"`
+}
+
+func (r *PayRequest) GenerateHtmlPostForm() string {
+	v := reflect.ValueOf(*r)
+	typeOfS := v.Type()
+	formItems := ""
+	for i := 0; i < v.NumField(); i++ {
+		//typeOfS.Field(i).Name
+		name := typeOfS.Field(i).Name
+		value := ""
+		if v.Field(i).CanInterface() {
+			value = v.Field(i).String()
+		}
+		if name == "Host" {
+			continue
+		}
+
+		formItems = formItems + "<input type=\"hidden\" name=\"" + name + "\" value=\"" + value + "\" />"
+	}
+	return "<html><head></head><body><form id=\"pay2Go\" action=\"" + r.Host + "\" method=\"POST\">" + formItems + "</form></body><script>document.getElementById(\"pay2Go\").submit();</script></html>"
 }
 
 type TradeInfo struct {
